@@ -120,7 +120,7 @@ train_datagen = ImageDataGenerator(
     height_shift_range=0.1
 )
 val_datagen = ImageDataGenerator(
-	rwscale=1./255
+	rescale=1./255
 )
 train_generator = train_datagen.flow_from_dataframe(
   train_df,
@@ -153,13 +153,6 @@ test_generator = val_datagen.flow_from_dataframe(
    shuffle=False,
    seed = 7
 )
-print("Test generator created")
-
-print("\nSample batch information:")
-print(f"Batch shape: {sample_batch.shape}")
-print(f"Pixel value range: {sample_batch.min()} to {sample_batch.max()}")
-print(f"Labels shape: {sample_labels.shape}")
-print(f"First few labels: {sample_labels[:5]}")
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
@@ -217,6 +210,7 @@ history = model.fit(
 
 print("\nTraining complete!")
 baseline_model = model
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
 axes[0].plot(history.history["loss"], label="Training Loss")
 axes[0].plot(history.history["val_loss"], label="Validation Loss")
@@ -244,7 +238,7 @@ print(f" Loss: {val_loss:.4f}")
 print(f" Accuracy:{val_accuracy:.4f} ({val_accuracy*100:.2f})")
 
 from tensorflow.keras.applications import ResNet152V2
-from tensorflow.keras.model import Model
+from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Dropout, Input
 
 base_model = ResNet152V2(
@@ -257,7 +251,7 @@ print(f"Loaded ResNet152V2 with {len(base_model.layers)} layers")
 
 base_model.trainable = False
 
-inputs = Input(shape(IMG_SIZE, IMG_SIZE, 3))
+inputs = Input(shape=(IMG_SIZE, IMG_SIZE, 3))
 x = base_model(inputs, training=False)
 x = GlobalAveragePooling2D()(x)
 x = Dense(128, activation="relu")(x)
@@ -347,8 +341,16 @@ true_labels = test_generator.classes
 baseline_cm = confusion_matrix(true_labels, baseline_preds)
 transfer_cm = confusion_matrix(true_labels, transfer_preds)
 
-fig, axes = plot.subplots(1, 2, figsize=(14,5))
-sns.heatmap(baseline_cm, annot=True, fmt="d", cmap="Blues", xtickslabels=["Normal", "Pneumonia"], yticklabels=["Normal", "Pneumonia"], ax=axes[0])
+fig, axes = plt.subplots(1, 2, figsize=(14,5))
+sns.heatmap(
+    baseline_cm, 
+    annot=True, 
+    fmt="d", 
+    cmap="Blues", 
+    xticklabels=["Normal", "Pneumonia"], 
+    yticklabels=["Normal", "Pneumonia"],  
+    ax=axes[0]
+)
 axes[0].set_title("Baseline CNN", fontsize=14, fontweight="bold")
 axes[0].set_title("True Label")
 axes[0].set_xlabel("Predicted Label")
